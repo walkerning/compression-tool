@@ -2,7 +2,7 @@
 import logging
 import os
 
-from svdtool.common import log
+from dan.common import log
 
 def init_logging(quiet=False, colorize=True):
     level = logging.ERROR if quiet else logging.INFO

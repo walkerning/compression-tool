@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
-import pdb #fortest
-import os
+
 import argparse
 import logging
 import numpy
-
+#import pdb #fortest
 import sys
 
-#import protobuf
-import svdtool.defaults as defaults
 from google.protobuf import text_format
 
-from svdtool.utils import modify_message
-from svdtool.common.utils import (init_logging, setup_glog_environ,
-                                  get_default_help)
+import dan.svdtool.defaults as defaults
+from dan.svdtool.proto_utils import modify_message
+from dan.common.utils import (init_logging, setup_glog_environ,
+                       get_default_help)
+
 
 def get_svd_layer_name(layer_name):
     return unicode(layer_name + '_svd_mid')
@@ -186,7 +185,7 @@ def svd_tool_inner(args):
         # bias设置在后一层
         final_param_dict[svd_hidelayer_name] = (new_param_list[0], param[1])
 
-    pdb.set_trace()
+    #pdb.set_trace()
     with open(args.output_proto, 'w') as output_proto_file:
         logger.info('Writing proto to file "%s".', args.output_proto)
         output_proto_file.write(text_format.MessageToString(final_solver))
@@ -219,8 +218,6 @@ def svd_tool_inner(args):
 
 
 def update_blob_vec(old_blob_vec, new_data_vec):
-    if len(new_data_vec) == 1:
-        pdb.set_trace()
     for i in range(len(new_data_vec)):
         new_data = new_data_vec[i]
         if not isinstance(new_data, numpy.ndarray) and hasattr(new_data, 'data'):
