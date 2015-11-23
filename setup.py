@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 # package meta info
 NAME = "svdtool"
-VERSION="0.0"
+VERSION=open("svdtool/VERSION").read().strip()
 DESCRIPTION = "svdtool for fc layers of caffe model."
 AUTHOR = ""
 AUTHOR_EMAIL = ""
@@ -18,7 +18,7 @@ svd_tool=svdtool:svd_tool
 """
 
 # dependencies
-INSTALL_REQUIRES = ['protobuf']
+INSTALL_REQUIRES = ['protobuf', 'numpy']
 TESTS_REQUIRE = []
 
 setup(
@@ -30,6 +30,8 @@ setup(
 
     py_modules=MODULES,
     packages=PACKAGES,
+
+    package_data={'svdtool': ['VERSION']},
 
     entry_points=ENTRY_POINTS,
 
