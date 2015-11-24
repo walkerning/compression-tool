@@ -8,7 +8,7 @@ import sys
 
 from google.protobuf import text_format
 
-import dan.svdtool.defaults as defaults
+from dan.svdtool import defaults
 from dan.svdtool.proto_utils import modify_message
 from dan.common.utils import (init_logging, setup_glog_environ,
                        get_default_help)
@@ -26,7 +26,7 @@ def load_svd_method_module(method_name, mod_name=None):
     if mod_name is None:
         mod_name = "svd_method_" + method_name
     try:
-        mod = __import__("svdtool." + mod_name, fromlist=["*"])
+        mod = __import__("dan.svdtool." + mod_name, fromlist=["*"])
     except ImportError:
         raise
 
