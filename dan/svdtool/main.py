@@ -93,11 +93,12 @@ def svd_tool():
     setup_glog_environ(args.quiet or args.quiet_caffe)
 
     # run the inner svd tool
-    svd_tool_inner(args)
+    status = svd_tool_inner(args)
+    sys.exit(0 if status else 1)
 
 
 def svd_tool_inner(args):
-    logger = logging.getLogger('svdtool')
+    logger = logging.getLogger('dan.svdtool')
     svd_spec_dict = dict(handle_input_arg(layer_string) for layer_string in args.layer)
     import caffe
     import caffe.proto.caffe_pb2 as caffepb2
@@ -105,11 +106,34 @@ def svd_tool_inner(args):
                                          caffe.TEST] if
                                         args.input_caffemodel else [caffe.TEST]))
 
+    if not set(svd_spec_dict) < set(net.params):
+        print net.params
+        if len(net.params) == 0:
+            logger.error("Layers do not exist: <%s>. "
+                         "Seems initialization of caffe.Net failed. Check the "
+                         "caffe GLOG output for more details.",
+                         ', '.join(set(svd_spec_dict) - set(net.params)))
+        else:
+            logger.error("Layers do not exist: <%s>. "
+                         "Check your command line argument of '-l'. ",
+                         ', '.join(set(svd_spec_dict) - set(net.params)))
+
+        return False
+
     # parse prototxt
     input_proto_file = open(args.input_proto, 'r')
     solver = caffepb2.NetParameter()
     solver = text_format.Merge(input_proto_file.read(), solver)
     input_proto_file.close()
+
+    if not set(svd_spec_dict) < set(solver.layer):
+        logger.error("Layers do not exist: <%s>. "
+                     "Seems that the loading of the prototxt file <%s> failed. "
+                     "Maybe using caffe/tools/upgrade_net_proto_text to upgdate "
+                     "the prototxt file?",
+                     ', '.join(set(svd_spec_dict) - set(solver.layer)),
+                     args.input_proto)
+        return False
 
     new_solver = caffepb2.NetParameter()
     new_solver.CopyFrom(solver)
@@ -215,7 +239,7 @@ def svd_tool_inner(args):
                     'important': True
                 })
 
-
+    return True
 
 def update_blob_vec(old_blob_vec, new_data_vec):
     for i in range(len(new_data_vec)):
