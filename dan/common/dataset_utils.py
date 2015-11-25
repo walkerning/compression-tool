@@ -10,7 +10,7 @@ DEFAULT_MEAN_FILE_TYPE = 'npy'
 
 
 def load_mean_file(file_name, file_type=None):
-    file_type = file_type or os.path.splitext() or DEFAULT_MEAN_FILE_TYPE
+    file_type = file_type or os.path.splitext(file_name)[-1][1:] or DEFAULT_MEAN_FILE_TYPE
     return LOADERS[file_type](file_name)
 
 

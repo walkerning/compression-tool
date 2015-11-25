@@ -18,3 +18,7 @@ venv/
 # data
 *.npy
 *.JPEG
+
+# models
+*.prototxt
+*.caffemodel

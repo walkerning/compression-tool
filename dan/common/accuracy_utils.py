@@ -21,7 +21,6 @@ def get_inputs_from_file(input_file, ext, test_num):
         inputs = []
         loaded_num = 0
         for file_name in file_name_list:
-            print file_name
             inputs.append(caffe.io.load_image(file_name))
             loaded_num += 1
             if loaded_num >= test_num:
@@ -58,7 +57,6 @@ def get_network_acc_from_file(net, input_file, label_file, test_num=1000,
                               ext=None, gpu=False, base_label=1):
     inputs = get_inputs_from_file(input_file, ext or 'JPEG', test_num)
     labels = get_labels_from_file(label_file, test_num)
-    print labels
     if len(inputs) != len(labels):
         logger.error('Inputs size %d not equal to label size %d. Cannot get network accuracy.', len(inputs), len(labels))
         return None
@@ -93,13 +91,15 @@ def setup_net_for_classification(net, mean=None, channel_swap=None,
     # gpu or cpu mode
     if gpu:
         caffe.set_mode_gpu()
+        caffe.set_device(1)
     else:
         caffe.set_mode_cpu()
 
     in_ = net.inputs[0]
 
     # setup transformer
-    transformer = caffe.io.Transformer({in_: net.blobs[in_].data.shape})
+    from dan.common.caffe_utils import Transformer
+    transformer = Transformer({in_: net.blobs[in_].data.shape})
     transformer.set_transpose(in_, (2, 0, 1)) # channel * H * W
     if mean is not None:
         transformer.set_mean(in_, mean)
