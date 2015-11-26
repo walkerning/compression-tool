@@ -35,8 +35,8 @@ class Transformer(_Transformer):
         mean = self.mean.get(in_)
         input_scale = self.input_scale.get(in_)
         in_dims = self.inputs[in_][2:]
-        if caffe_in.shape[:2] != in_dims:
-            caffe_in = resize_image(caffe_in, in_dims)
+        #if caffe_in.shape[:2] != in_dims:
+        #caffe_in = resize_image(caffe_in, in_dims)
         if transpose is not None:
             caffe_in = caffe_in.transpose(transpose)
         if channel_swap is not None:
@@ -44,7 +44,7 @@ class Transformer(_Transformer):
         if raw_scale is not None:
             caffe_in *= raw_scale
         if mean is not None:
-                caffe_in -= mean
+            caffe_in -= mean
         if input_scale is not None:
             caffe_in *= input_scale
         return caffe_in
@@ -72,6 +72,6 @@ class Transformer(_Transformer):
             if len(ms) != 3:
                 raise ValueError('Mean shape invalid')
             if ms != self.inputs[in_][1:]:
-                mean = np.resize(mean, self.inputs[in_][1:]) # temp change to center crop? maybe a good idea is transformation of mean and also do the oversample of mean for just once
+                mean = mean[:, 0:self.inputs[in_][2], 0:self.inputs[in_][3]] # temp. change to center crop? maybe a good idea is first substract the transformation of mean?
                 #raise ValueError('Mean shape incompatible with input shape.')
         self.mean[in_] = mean

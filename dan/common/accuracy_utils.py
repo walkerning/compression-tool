@@ -26,12 +26,11 @@ def get_inputs_from_file(input_file, ext, test_num):
             if loaded_num >= test_num:
                 break
     else:
-        inputs = [caffe.io.load_image(file_name)]
+        inputs = [caffe.io.load_image(input_file)]
     if len(inputs) < test_num:
         logger.warn('There is less than %d (test_num) pictures with extension %s '
                     'in the directory %s. Only %d inputs are loaded.',
                     test_num, ext, input_file, len(inputs))
-
     return inputs
 
 
@@ -58,13 +57,16 @@ def get_network_acc_from_file(net, input_file, label_file, test_num=1000,
     inputs = get_inputs_from_file(input_file, ext or 'JPEG', test_num)
     labels = get_labels_from_file(label_file, test_num)
     if len(inputs) != len(labels):
-        logger.error('Inputs size %d not equal to label size %d. Cannot get network accuracy.', len(inputs), len(labels))
+        logger.error('Inputs size %d not equal to label size %d. Cannot get network accuracy.',
+                     len(inputs), len(labels))
         return None
     # mean and channel_swap
     mean, channel_swap = None, None
     if mean_file is not None:
-        mean_file = os.path.expanduser(mean_file)
-        mean = dataset_utils.load_mean_file(mean_file)
+        logger.warn('Mean file is deprecated. Ignore')
+        #mean_file = os.path.expanduser(mean_file)
+        #mean = dataset_utils.load_mean_file(mean_file)
+        mean = np.array([123, 117, 104])#[104, 117, 123])
     if channel_swap is not None:
         channel_swap = [int(s) for s in channel_swap.split(',')]
 
@@ -122,6 +124,7 @@ def get_top5_prediction_labels(predictions):
         top5_predictions[index][...] = predictions[index].argsort()[::-1][:5]
     return top5_predictions
 
+
 def get_accuracy(top5_prediction_labels, labels, base_label=0):
     top1_num = top5_num = 0
     label_num = len(labels)
@@ -170,12 +173,15 @@ def predict(self, inputs, oversample=True):
             self.crop_dims / 2.0
         ])
         input_ = input_[:, crop[0]:crop[2], crop[1]:crop[3], :]
+        #input_ = input_[:, 0:224, 0:224, :]
 
     # Classify
     caffe_in = np.zeros(np.array(input_.shape)[[0, 3, 1, 2]],
                         dtype=np.float32)
     for ix, in_ in enumerate(input_):
         caffe_in[ix] = self.transformer.preprocess(self.inputs[0], in_)
+    import pdb
+    pdb.set_trace()
     logger.info('starting forward all!')
     out = self.forward_all(**{self.inputs[0]: caffe_in})
     predictions = out[self.outputs[0]]
