@@ -15,8 +15,10 @@ from dan.common import accuracy_utils
 acc = accuracy_utils.get_network_acc_from_file(net, '/home/imgNet1k/imagenet1k_valid/',
                                                '/home/yaos11/nxf/tagList',
                                                test_num=5000,
-                                               center_only=True,
+                                               center_only=False,
                                                gpu=True, channel_swap='2,1,0',
                                                mean_file='/home/yaos11/yao/caffe/python/caffe/imagenet/ilsvrc_2012_mean.npy')
+
+
 
 print acc

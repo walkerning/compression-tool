@@ -53,7 +53,8 @@ def svd_tool():
         '-l', '--layer', action='append',
         metavar='NAME[,METHOD[,ARG]]',
         help=get_default_help(defaults.DEFAULT_METHOD, 'DEFAULT_METHOD') + \
-        get_default_help(defaults.DEFAULT_METHOD_ARGUMENT, 'DEFAULT_ARG')
+        get_default_help(defaults.DEFAULT_METHOD_ARGUMENT, 'DEFAULT_ARG',),
+        required=True
     )
     parser.add_argument(
         '--input-proto',
@@ -107,7 +108,7 @@ def svd_tool_inner(args):
                                         args.input_caffemodel else [caffe.TEST]))
 
     if not set(svd_spec_dict) < set(net.params):
-        print net.params
+        #print net.params
         if len(net.params) == 0:
             logger.error("Layers do not exist: <%s>. "
                          "Seems initialization of caffe.Net failed. Check the "
@@ -126,7 +127,7 @@ def svd_tool_inner(args):
     solver = text_format.Merge(input_proto_file.read(), solver)
     input_proto_file.close()
 
-    if not set(svd_spec_dict) < set(solver.layer):
+    if not set(svd_spec_dict) < {l.name for l in solver.layer}:
         logger.error("Layers do not exist: <%s>. "
                      "Seems that the loading of the prototxt file <%s> failed. "
                      "Maybe using caffe/tools/upgrade_net_proto_text to upgdate "
@@ -190,7 +191,9 @@ def svd_tool_inner(args):
             continue
         svd_spec = svd_spec_dict[layer_name]
 
-        logger.info("Start calculating svd of layer <%s>. Strategy: %s. Argument <%s>: %s", layer_name, svd_spec['method'].method_name, svd_spec['method'].method_arg, str(svd_spec['argument']))
+        logger.info("Start calculating svd of layer <%s>. Strategy: %s. Argument <%s>: %s",
+                    layer_name, svd_spec['method'].method_name,
+                    svd_spec['method'].method_arg, str(svd_spec['argument']))
         hide_layer_size, new_param_list = svd_spec['method'](svd_spec['argument'],
                                                              param[0].data, net=net, new_net=new_net)
         logger.info("Finish calculating svd of layer <%s>.", layer_name)
