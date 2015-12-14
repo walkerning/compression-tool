@@ -15,11 +15,12 @@ PACKAGES = find_packages()
 
 ENTRY_POINTS = """
 [console_scripts]
+dan=dan:main
 svd_tool=dan:svd_tool
 """
 
 # dependencies
-INSTALL_REQUIRES = ['protobuf', 'numpy']
+INSTALL_REQUIRES = ['protobuf', 'numpy', 'pyyaml']
 TESTS_REQUIRE = []
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -43,7 +44,7 @@ setup(
     py_modules=MODULES,
     packages=PACKAGES,
 
-    package_data={'dan': ['VERSION']},
+    package_data={'dan': ['VERSION', 'config_example.yaml']},
 
     entry_points=ENTRY_POINTS,
 
