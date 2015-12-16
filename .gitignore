@@ -22,3 +22,7 @@ venv/
 # models
 *.prototxt
 *.caffemodel
+
+# distributions
+build/
+dist/

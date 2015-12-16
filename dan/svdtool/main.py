@@ -163,7 +163,7 @@ class SVDTool(object):
         # parse prototxt
         input_proto_file = open(self.input_proto, 'r')
         solver = caffepb2.NetParameter()
-        solver = text_format.Merge(input_proto_file.read(), solver)
+        text_format.Merge(input_proto_file.read(), solver)
         input_proto_file.close()
 
         if not set(self.svd_spec_dict) < {l.name for l in solver.layer}:
