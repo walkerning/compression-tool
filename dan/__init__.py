@@ -9,7 +9,7 @@ import yaml
 from setuptools import find_packages
 from dan.common.utils import (init_logging, setup_glog_environ)
 from dan.common.config import ConfigLoader
-from .svdtool import svd_tool
+from dan.svdtool import svd_tool
 
 __version__ = open(os.path.join(os.path.dirname(__file__), "VERSION")).read().strip()
 

@@ -4,7 +4,6 @@ import argparse
 import logging
 import numpy
 import re
-#import pdb #fortest
 import sys
 
 from google.protobuf import text_format
@@ -147,33 +146,39 @@ class SVDTool(object):
             return False
 
         if not set(self.svd_spec_dict) < set(net.params):
-            #print net.params
             if len(net.params) == 0:
-                logger.error("Layers do not exist: <%s>. "
+                logger.error("Layers do not exist: < %s >. "
                              "Seems initialization of caffe.Net failed. Check the "
                              "caffe GLOG output for more details.",
                              ', '.join(set(self.svd_spec_dict) - set(net.params)))
             else:
-                logger.error("Layers do not exist: <%s>. "
+                logger.error("Layers do not exist: < %s >. "
                              "Check your command line argument of '-l'. ",
                              ', '.join(set(self.svd_spec_dict) - set(net.params)))
 
             return False
 
         # parse prototxt
-        input_proto_file = open(self.input_proto, 'r')
-        solver = caffepb2.NetParameter()
-        text_format.Merge(input_proto_file.read(), solver)
-        input_proto_file.close()
+        with open(self.input_proto, 'r') as input_proto_file:
+            solver = caffepb2.NetParameter()
+            text_format.Merge(input_proto_file.read(), solver)
 
-        if not set(self.svd_spec_dict) < {l.name for l in solver.layer}:
-            logger.error("Layers do not exist: <%s>. "
-                         "Seems that the loading of the prototxt file <%s> failed. "
-                         "Maybe using caffe/tools/upgrade_net_proto_text to upgdate "
+        if not solver.layer:
+            logger.error("No layers could be loaded from the prototxt file < %s >. "
+                         "Maybe you can use caffe/tools/upgrade_net_proto_text to upgdate "
                          "the prototxt file?",
-                         ', '.join(set(self.svd_spec_dict) - set(solver.layer)),
                          self.input_proto)
             return False
+
+        fc_layer_names = {l.name for l in solver.layer if l.type == u'InnerProduct'}
+
+        if not set(self.svd_spec_dict) < fc_layer_names:
+            logger.error("FC layers do not exist: < %s >. \t"
+                         "Check your command line argument of '-l'. "
+                         "Is that layer really a fc layer?",
+                         ', '.join(set(self.svd_spec_dict) - fc_layer_names))
+            return False
+
 
         self.ori_solver = solver
         self.ori_net = net
@@ -237,19 +242,18 @@ class SVDTool(object):
         final_solver = caffepb2.NetParameter()
         text_format.Merge(open(self.output_proto, 'r').read(), final_solver)
 
-        #pdb.set_trace()
         final_param_dict = {}
         for layer_name, param in self.ori_net.params.iteritems():
             if layer_name not in self.svd_spec_dict:
                 continue
             svd_spec = self.svd_spec_dict[layer_name]
 
-            logger.info("Start calculating svd of layer <%s>. Strategy: %s. Argument <%s>: %s",
+            logger.info("Start calculating svd of layer < %s >. Strategy: %s. Argument < %s >: %s",
                         layer_name, svd_spec['method'].method_name,
                         svd_spec['method'].method_arg, str(svd_spec['argument']))
             hide_layer_size, new_param_list = svd_spec['method'](svd_spec['argument'],
                                                                  param[0].data, net=self.ori_net, new_net=new_net)
-            logger.info("Finish calculating svd of layer <%s>.", layer_name)
+            logger.info("Finish calculating svd of layer < %s >.", layer_name)
 
             svd_hidelayer_name = get_svd_layer_name(layer_name)
 
@@ -265,7 +269,6 @@ class SVDTool(object):
             # bias设置在后一层
             final_param_dict[svd_hidelayer_name] = (new_param_list[0], param[1])
 
-        #pdb.set_trace()
         with open(self.output_proto, 'w') as output_proto_file:
             logger.info('Writing proto to file "%s".', self.output_proto)
             output_proto_file.write(text_format.MessageToString(final_solver))
