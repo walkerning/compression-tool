@@ -10,8 +10,8 @@ from setuptools import find_packages
 from dan.common.utils import (init_logging, setup_glog_environ)
 from dan.common.config import ConfigLoader
 from dan.svdtool import svd_tool
-
-__version__ = open(os.path.join(os.path.dirname(__file__), "VERSION")).read().strip()
+from dan.__meta__ import (__version__, __author__, __title__,
+                          __description__)
 
 here = os.path.dirname(os.path.abspath(__file__))
 
@@ -25,8 +25,8 @@ def get_command_cls(package):
     return (name, class_obj)
 
 def load_command_packages():
-    command_packages = find_packages(here, exclude=['common', 'common.*', 'test',
-                                                    'test.*'])
+    command_packages = find_packages(here, exclude=['common', 'common.*'])
+
     for package_name in command_packages:
         if '.' in package_name:
             # ignore inner packages
