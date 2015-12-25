@@ -5,6 +5,7 @@ import logging
 import numpy
 import re
 import sys
+import os
 
 from google.protobuf import text_format
 
@@ -70,15 +71,38 @@ class SVDTool(object):
     required_conf = ['layers', 'input_proto', 'output_proto',
                      'input_caffemodel', 'output_caffemodel']
 
-    def __init__(self, config):
+    def __init__(self, config, hide_file_path=False):
         self.svd_spec_dict = dict(handle_input_arg(layer_string) for layer_string in config.layers)
-        self.input_proto = config.input_proto
-        self.input_caffemodel = config.input_caffemodel
-        self.output_proto = config.output_proto
-        self.output_caffemodel = config.output_caffemodel
+        self.input_proto = str(config.input_proto)
+        self.input_caffemodel = str(config.input_caffemodel)
+        self.output_proto = str(config.output_proto)
+        self.output_caffemodel = str(config.output_caffemodel)
 
         self.ori_solver = None
         self.ori_net = None
+        
+        # hide file abs path, mainly for use of hiding file system details
+        self.hide_file_path = hide_file_path
+
+    def __getattr__(self, name):
+        # mainly for hide file path
+        if name.startswith('_log_'):
+            actual_name = name[5:]
+            if actual_name in ['input_proto', 'output_proto', 'input_caffemodel',
+                               'output_caffemodel']:
+                if self.hide_file_path:
+                    # fixme: maybe use platform-wise seperator
+                    return os.path.join(*getattr(self, actual_name).rsplit('/', 2)[-2:])
+                else:
+                    return getattr(self, actual_name)
+        # not all object suclass implement __getattr__
+        super_obj = super(SVDTool, self)
+        super_getattr = getattr(super_obj, '__getattr__', None)
+        if super_getattr is not None:
+            return super_getattr(name)
+        else:
+            raise AttributeError("type %s object has no attribute %s" % (self.__class__,
+                                                                         name))
 
     @classmethod
     def populate_argument_parser(cls, parser):
@@ -120,7 +144,7 @@ class SVDTool(object):
         )
 
     @classmethod
-    def load_from_config(cls, conf_dict):
+    def load_from_config(cls, conf_dict, **kwargs):
         """
         Construct SVDTool instance from config"""
         logger = logging.getLogger('dan.svdtool')
@@ -130,7 +154,7 @@ class SVDTool(object):
                              " please check your configuration file.", conf_name)
                 return None
 
-        new_ins = cls(ConfigBunch(conf_dict))
+        new_ins = cls(ConfigBunch(conf_dict), **kwargs)
         return new_ins
 
     def validate_conf(self):
@@ -142,7 +166,7 @@ class SVDTool(object):
                                                  caffe.TEST] if
                                                 self.input_caffemodel else [caffe.TEST]))
         except Exception as e:
-            logger.error("Error occur when construct caffe.Net using %s and %s: %s", self.input_proto, self.input_caffemodel, e)
+            logger.error("Error occur when construct caffe.Net using %s and %s: %s", self._log_input_proto, self._log_input_caffemodel, e)
             return False
 
         if not set(self.svd_spec_dict) < set(net.params):
@@ -167,7 +191,7 @@ class SVDTool(object):
             logger.error("No layers could be loaded from the prototxt file < %s >. "
                          "Maybe you can use caffe/tools/upgrade_net_proto_text to upgdate "
                          "the prototxt file?",
-                         self.input_proto)
+                         self._log_input_proto)
             return False
 
         fc_layer_names = {l.name for l in solver.layer if l.type == u'InnerProduct'}
@@ -233,7 +257,7 @@ class SVDTool(object):
 
         # 写入拆分后的proto
         with open(self.output_proto, 'w') as output_proto_file:
-            logger.info('Writing temporary prototxt to "%s".', self.output_proto)
+            logger.info('Writing temporary prototxt to "%s".', self._log_output_proto)
             output_proto_file.write(text_format.MessageToString(new_solver))
 
         # 构建新的net方便计算
@@ -270,7 +294,7 @@ class SVDTool(object):
             final_param_dict[svd_hidelayer_name] = (new_param_list[0], param[1])
 
         with open(self.output_proto, 'w') as output_proto_file:
-            logger.info('Writing proto to file "%s".', self.output_proto)
+            logger.info('Writing proto to file "%s".', self._log_output_proto)
             output_proto_file.write(text_format.MessageToString(final_solver))
 
         new_net = caffe.Net(self.output_proto, caffe.TEST)
@@ -289,11 +313,11 @@ class SVDTool(object):
                                 final_param_dict[svd_hidelayer_name])
 
 
-        logger.info('Writing caffe model to file "%s".', self.output_caffemodel)
+        logger.info('Writing caffe model to file "%s".', self._log_output_caffemodel)
         new_net.save(self.output_caffemodel)
         logger.info('Finish processing svd of fc layer! Prototxt in file "%s"'
-                    '. Caffemodel in file "%s".\n', self.output_proto,
-                    self.output_caffemodel,
+                    '. Caffemodel in file "%s".\n', self._log_output_proto,
+                    self._log_output_caffemodel,
                     extra={
                         'important': True
                     })
