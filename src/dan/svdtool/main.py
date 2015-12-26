@@ -6,6 +6,7 @@ import numpy
 import re
 import sys
 import os
+import yaml
 
 from google.protobuf import text_format
 
@@ -60,13 +61,20 @@ def svd_tool():
     init_logging(args.quiet)
     setup_glog_environ(args.quiet or args.quiet_caffe)
 
-    # run the inner svd tool
-    svd_tool_ins = SVDTool(args)
-    status = svd_tool_ins.run()
+    if args.config_file:
+        svd_tool_ins = SVDTool.load_from_config_file(args.config_file)
+    else:
+        svd_tool_ins = SVDTool(args)
+
+    if svd_tool_ins is not None:
+        # run the inner svd tool
+        status = svd_tool_ins.run()
+    else:
+        status = False
 
     sys.exit(0 if status else 1)
 
-
+    
 class SVDTool(object):
     required_conf = ['layers', 'input_proto', 'output_proto',
                      'input_caffemodel', 'output_caffemodel']
@@ -107,25 +115,40 @@ class SVDTool(object):
     @classmethod
     def populate_argument_parser(cls, parser):
         # Argument parser
-        parser.add_argument(
+        subparsers = parser.add_subparsers(
+            help='Load the configuration in 2 different ways'
+        )
+        config_cmd_subparser = subparsers.add_parser(
+            'cmd',
+            help='Sepecify configurations using command line arguments.'
+        )
+        config_file_subparser = subparsers.add_parser(
+            'conf',
+            help='Load config from a yaml config file rather than from the '
+                 'command line arguments'
+        )
+        config_file_subparser.add_argument(
+            'config_file', help='Name of the config file'
+        )
+        config_cmd_subparser.add_argument(
             '-l', '--layers', action='append',
             metavar='NAME[,METHOD[,ARG]]',
             help=get_default_help(defaults.DEFAULT_METHOD, 'DEFAULT_METHOD') + \
             get_default_help(defaults.DEFAULT_METHOD_ARGUMENT, 'DEFAULT_ARG',),
             required=True
         )
-        parser.add_argument(
+        config_cmd_subparser.add_argument(
             '--input-proto',
             required=True
         )
-        parser.add_argument(
+        config_cmd_subparser.add_argument(
             '--input-caffemodel'
         )
-        parser.add_argument(
+        config_cmd_subparser.add_argument(
             '--output-proto',
             required=True
         )
-        parser.add_argument(
+        config_cmd_subparser.add_argument(
             '--output-caffemodel',
             required=True
         )
@@ -142,6 +165,26 @@ class SVDTool(object):
         parser.add_argument(
             '-c', '--caffe', help='The search path of pycaffe on your machine.'
         )
+
+        # For loading mode using config file(yaml)
+        # parser.add_argument(
+        #     '-f', '--config-file',
+        #     help='Use config file rather than command line arguments, '
+        #          'argument other than -c/-q/--quiet-caffe will be ignored.'
+        # )
+
+    @classmethod
+    def load_from_config_file(cls, conf_file):
+        logger = logging.getLogger('dan.svdtool') # could move to global variable
+        try:
+            conf_dict = yaml.load(open(conf_file, 'r'))
+        #except yaml.error.YAMLError as e:
+        except Exception: # 还有文件不存在
+            logger.error("Configuration file is corrupted! Aborting!")
+            return None
+
+        hide_file_path = conf_dict.get('hide_file_path', False)
+        return cls.load_from_config(conf_dict, hide_file_path=hide_file_path)
 
     @classmethod
     def load_from_config(cls, conf_dict, **kwargs):
