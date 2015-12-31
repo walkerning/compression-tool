@@ -61,7 +61,7 @@ def svd_tool():
     init_logging(args.quiet)
     setup_glog_environ(args.quiet or args.quiet_caffe)
 
-    if args.config_file:
+    if hasattr(args, 'config_file') and args.config_file:
         svd_tool_ins = SVDTool.load_from_config_file(args.config_file)
     else:
         svd_tool_ins = SVDTool(args)
