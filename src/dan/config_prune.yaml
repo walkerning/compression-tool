@@ -1,0 +1,13 @@
+  pipeline:
+    #- conv1
+    - prune
+
+  config:
+    prune:
+      command: 'prune_tool'
+      input_proto: '../VGG16ORI_new.prototxt'
+      input_caffemodel: '../VGG16ORI_new.caffemodel'
+      output_caffemodel: './VGG16_4x.caffemodel'
+      conditions:
+        - [False, 'conv', 0.70]
+        - [True, 'fc[0-9]*', 0.9]
