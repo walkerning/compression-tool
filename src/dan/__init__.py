@@ -7,6 +7,8 @@ import logging
 import yaml
 
 from setuptools import find_packages
+
+from dan.base import BaseTool
 from dan.common.utils import (init_logging, setup_glog_environ)
 from dan.common.config import ConfigLoader
 from dan.svdtool import svd_tool
@@ -111,10 +113,16 @@ def main():
         worker_dict[stage] = worker
 
     for stage in whole_config['pipeline']:
-        status = worker_dict[stage].run()
+        try:
+            status = worker_dict[stage].run()
+        except Exception as e:
+            # fixme: 暂时打印?
+            print >>sys.stderr, e
+            status = False
         if not status:
             logger.error("ABORTING! Error occur in stage '%s'", stage)
+            break
         # explicitly delete
         # del worker_dict[stage] but there maybe several stage with the same name
 
-    return status
+    sys.exit(0 if status else 1)

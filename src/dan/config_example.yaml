@@ -1,5 +1,4 @@
   pipeline:
-    #- conv1
     - svd1
 
   config:
@@ -7,8 +6,8 @@
       command: 'svd_tool'
       input_proto: '../VGG16ORI_new.prototxt'
       input_caffemodel: '../VGG16ORI_new.caffemodel'
-      output_proto: './try4.prototxt'
-      output_caffemodel: './try4.caffemodel'
+      output_proto: './output_vgg16_svd_fc6_rank512.prototxt'
+      output_caffemodel: './output_vgg16_svd_fc6_rank512.caffemodel'
       pre-validate: True
       layers:
         - 'fc6, rank, 512'
