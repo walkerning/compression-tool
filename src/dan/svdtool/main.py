@@ -10,11 +10,11 @@ import yaml
 
 from google.protobuf import text_format
 
+from dan.base import BaseTool
 from dan.svdtool import defaults
 from dan.svdtool.proto_utils import modify_message
 from dan.common.utils import (init_logging, setup_glog_environ,
-                       get_default_help)
-from dan.common.config import ConfigBunch
+                              get_default_help)
 
 
 def get_svd_layer_name(layer_name):
@@ -40,7 +40,7 @@ def load_svd_method_module(method_name, mod_name=None):
             mod.do_svd.method_arg = method_name.upper()
         return mod
     else:
-        raise
+        raise Exception('SVD method module not legal!')
 
 
 def svd_tool():
@@ -75,11 +75,13 @@ def svd_tool():
     sys.exit(0 if status else 1)
 
     
-class SVDTool(object):
+class SVDTool(BaseTool):
     required_conf = ['layers', 'input_proto', 'output_proto',
                      'input_caffemodel', 'output_caffemodel']
 
-    def __init__(self, config, hide_file_path=False):
+    def __init__(self, config):
+        super(SVDTool, self).__init__(config)
+
         self.svd_spec_dict = dict(handle_input_arg(layer_string) for layer_string in config.layers)
         self.input_proto = str(config.input_proto)
         self.input_caffemodel = str(config.input_caffemodel)
@@ -88,67 +90,29 @@ class SVDTool(object):
 
         self.ori_solver = None
         self.ori_net = None
-        
-        # hide file abs path, mainly for use of hiding file system details
-        self.hide_file_path = hide_file_path
-
-    def __getattr__(self, name):
-        # mainly for hide file path
-        if name.startswith('_log_'):
-            actual_name = name[5:]
-            if actual_name in ['input_proto', 'output_proto', 'input_caffemodel',
-                               'output_caffemodel']:
-                if self.hide_file_path:
-                    # fixme: maybe use platform-wise seperator
-                    return os.path.join(*getattr(self, actual_name).rsplit('/', 2)[-2:])
-                else:
-                    return getattr(self, actual_name)
-        # not all object suclass implement __getattr__
-        super_obj = super(SVDTool, self)
-        super_getattr = getattr(super_obj, '__getattr__', None)
-        if super_getattr is not None:
-            return super_getattr(name)
-        else:
-            raise AttributeError("type %s object has no attribute %s" % (self.__class__,
-                                                                         name))
 
     @classmethod
     def populate_argument_parser(cls, parser):
         # Argument parser
-        subparsers = parser.add_subparsers(
-            help='Load the configuration in 2 different ways'
-        )
-        config_cmd_subparser = subparsers.add_parser(
-            'cmd',
-            help='Sepecify configurations using command line arguments.'
-        )
-        config_file_subparser = subparsers.add_parser(
-            'conf',
-            help='Load config from a yaml config file rather than from the '
-                 'command line arguments'
-        )
-        config_file_subparser.add_argument(
-            'config_file', help='Name of the config file'
-        )
-        config_cmd_subparser.add_argument(
+        parser.add_argument(
             '-l', '--layers', action='append',
             metavar='NAME[,METHOD[,ARG]]',
             help=get_default_help(defaults.DEFAULT_METHOD, 'DEFAULT_METHOD') + \
             get_default_help(defaults.DEFAULT_METHOD_ARGUMENT, 'DEFAULT_ARG',),
             required=True
         )
-        config_cmd_subparser.add_argument(
+        parser.add_argument(
             '--input-proto',
             required=True
         )
-        config_cmd_subparser.add_argument(
+        parser.add_argument(
             '--input-caffemodel'
         )
-        config_cmd_subparser.add_argument(
+        parser.add_argument(
             '--output-proto',
             required=True
         )
-        config_cmd_subparser.add_argument(
+        parser.add_argument(
             '--output-caffemodel',
             required=True
         )
@@ -165,40 +129,6 @@ class SVDTool(object):
         parser.add_argument(
             '-c', '--caffe', help='The search path of pycaffe on your machine.'
         )
-
-        # For loading mode using config file(yaml)
-        # parser.add_argument(
-        #     '-f', '--config-file',
-        #     help='Use config file rather than command line arguments, '
-        #          'argument other than -c/-q/--quiet-caffe will be ignored.'
-        # )
-
-    @classmethod
-    def load_from_config_file(cls, conf_file):
-        logger = logging.getLogger('dan.svdtool') # could move to global variable
-        try:
-            conf_dict = yaml.load(open(conf_file, 'r'))
-        #except yaml.error.YAMLError as e:
-        except Exception: # 还有文件不存在
-            logger.error("Configuration file is corrupted! Aborting!")
-            return None
-
-        hide_file_path = conf_dict.get('hide_file_path', False)
-        return cls.load_from_config(conf_dict, hide_file_path=hide_file_path)
-
-    @classmethod
-    def load_from_config(cls, conf_dict, **kwargs):
-        """
-        Construct SVDTool instance from config"""
-        logger = logging.getLogger('dan.svdtool')
-        for conf_name in cls.required_conf:
-            if not conf_name in conf_dict:
-                logger.error("Configuration do not have '%s' which is required,"
-                             " please check your configuration file.", conf_name)
-                return None
-
-        new_ins = cls(ConfigBunch(conf_dict), **kwargs)
-        return new_ins
 
     def validate_conf(self):
         logger = logging.getLogger('dan.svdtool')

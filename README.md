@@ -49,11 +49,10 @@ Decomposition tool for conv layers of the caffe models.
 
 `dan -f <path-to-your-config-file> -c <path-to-your-pycaffe> --quiet-caffe`
 
-`svd_tool --quiet-caffe -c <path to your pycaffe> cmd --input-proto <input prototxt file> --input-caffemodel <input caffemodel file> --output-proto <output prototxt file> --output-caffemodel <output caffemodel file> -l fc6`
+`svd_tool --quiet-caffe -c <path to your pycaffe> --input-proto <input prototxt file> --input-caffemodel <input caffemodel file> --output-proto <output prototxt file> --output-caffemodel <output caffemodel file> -l fc6`
 
-注意使用svd_tool的命令行接口时，要使用`cmd` subparser, `--quiet-caffe`, `-q`, `-c`这一系列公共参数请在subparser `cmd` 之前给出。
 
 下面是将vgg16的网络的fc7这一层做svd分解，保留奇异值最大的400维，构成的新的网络的示例: 
 
 
-    $ svd_tool -c my/path/to/caffe/python --quiet-caffe cmd --input-proto ../VGG16ORI_new.prototxt --input-caffemodel ../VGG16ORI_new.caffemodel --output-proto ./vgg16_rank400_fc7.prototxt --output-caffemodel ./vgg16_rank400_fc7.caffemodel -l fc7,rank,400
+    $ svd_tool -c my/path/to/caffe/python --quiet-caffe --input-proto ../VGG16ORI_new.prototxt --input-caffemodel ../VGG16ORI_new.caffemodel --output-proto ./vgg16_rank400_fc7.prototxt --output-caffemodel ./vgg16_rank400_fc7.caffemodel -l fc7,rank,400
