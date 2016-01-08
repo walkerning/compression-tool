@@ -1,0 +1,13 @@
+  pipeline:
+    #- conv1
+    - quantize
+
+  config:
+    quantize:
+      command: 'quantize_tool'
+      input_proto: '../VGG16ORI_new.prototxt'
+      input_caffemodel: '../VGG16ORI_new.caffemodel'
+      output_caffemodel: './VGG16_quantize.caffemodel'
+      conditions:
+        - [False, 'conv', 8]
+        - [True, 'fc[0-9]*', 4]

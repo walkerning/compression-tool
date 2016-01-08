@@ -10,7 +10,7 @@ from dan.base import BaseTool
 def prune_tool():
     raise Exception("Unimplemented")
 
-def _prune(net, prune_cond):
+def _prune(net, prune_cond, logger = None):
     layers = net.params.keys()
     done_layers = []
     
@@ -41,6 +41,9 @@ def _prune(net, prune_cond):
             flatten_data = flatten_data.reshape(weights.shape)
             np.copyto(weights, flatten_data)
 
+            if logger:
+                logger.info("Finish pruning layer %s"%layer)
+
 
 
 class PruneTool(BaseTool):
@@ -59,7 +62,7 @@ class PruneTool(BaseTool):
         import caffe
 
         net = caffe.Net(self.input_proto, self.input_caffemodel, caffe.TEST)
-        _prune(net, self.prune_cond)
+        _prune(net, self.prune_cond, logger)
 
         net.save(self.output_caffemodel)
         logger.info('Finish pruning of all layers! Caffemodel in file "%s".\n', self._log_output_caffemodel)

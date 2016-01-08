@@ -12,7 +12,7 @@ import caffe
 def quantize_tool():
     raise Exception("Unimplemented")
 
-def _quantize(net, quan_cond):
+def _quantize(net, quan_cond, logger=None):
     layers = net.params.keys()
     done_layers = []
 
@@ -48,14 +48,13 @@ def _quantize(net, quan_cond):
             initial_uni = np.linspace(min_W, max_W, num_c)
             W_nonzero = W[W!=0]
             codebook, _ =  scv.kmeans(W_nonzero, initial_uni)
-            while len(codebook) < num_c:
-                initial_uni = np.append(codebook, np.linspace(min_W, max_W, num_c))
-                codebook, _ =  scv.kmeans(W_nonzero, initial_uni)
+            if len(codebook) < num_c:
+                codebook = np.append(codebook, np.linspace(min_W, max_W, num_c-len(codebook)))
 
             codebook = np.append(0, codebook)
 
             # Quantize
-            codes = scv.vq(W, codebook)
+            codes, _ = scv.vq(W, codebook)
             quantized_data = codebook[codes]
             flatten_data = quantized_data.reshape(weights.shape)
             np.copyto(weights, flatten_data)
@@ -63,13 +62,16 @@ def _quantize(net, quan_cond):
             if len(net.params[layer]) > 1:
                 bias = net.params[layer][1].data
                 b = b.flatten()
-                codes = scv.vq(b, codebook)
+                codes, _ = scv.vq(b, codebook)
                 quantized_data = codebook[codes]
                 flatten_data = quantized_data.reshape(bias.shape)
                 np.copyto(bias, flatten_data)
             '''
             codebook_all[layer] = codebook
             codes_W[layer] = codes
+
+            if logger:
+                logger.info("Finish quantizing layer %s"%layer)
 
     return codebook_all, codes_W
 
@@ -90,7 +92,7 @@ class QuantizeTool(BaseTool):
         logger = logging.getLogger('dan.quantool')
 
         net = caffe.Net(self.input_proto, self.input_caffemodel, caffe.TEST)
-        _quantize(net, self.quan_cond)
+        _quantize(net, self.quan_cond, logger)
 
         net.save(self.output_caffemodel)
         logger.info('Finish pruning of all layers! Caffemodel in file "%s".\n', self._log_output_caffemodel)

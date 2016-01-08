@@ -83,16 +83,28 @@ class PQTool(BaseTool):
     def __init__(self, config):
         super(PQTool, self).__init__(config)
 
-        self.weights = np.load(config['input_npz'])
-        self.output = config['output_file']
-        self.mode = config['mode']
+        self.weights = np.load(config.input_npz)
+        self.output = config.output_file
+        self.mode = config.mode
+        self.validated = False
 
     def run(self):
         logger = logging.getLogger('dan.nonmodel_tool')
+        if not self.validated:
+            self.validate_conf()
+        logger.info("================================")
+        logger.info("Prune conditions")
+        for condition in self.mode['prune_conditions']:
+            logger.info("%10s %.2f"%(condition[1], condition[2]))
+        logger.info("================================")
+        logger.info("Quantize conditions")
+        for condition in self.mode['quantize_conditions']:
+            logger.info("%10s %2d"%(condition[1], condition[2]))
+        logger.info("================================")
 
         net = fakenet(self.weights)
-        _prune(net, self.mode['prune_conditions'])
-        codebook, codes_W = _quantize(net, self.mode['quantize_conditions'])
+        _prune(net, self.mode['prune_conditions'], logger)
+        codebook, codes_W = _quantize(net, self.mode['quantize_conditions'], logger)
 
         _stream_to_file(self.output, codebook, codes_W, net)
 
@@ -101,6 +113,7 @@ class PQTool(BaseTool):
         return True
     
     def validate_conf(self):
+        self.validated = True
         if self.mode['foolmode']:
             self.mode['prune_conditions'] = []
             self.mode['quantize_conditions'] = []
@@ -135,6 +148,7 @@ class PQTool(BaseTool):
             nonzero_ratio = (8.0 / compress_rate - 3 * p1) / (3 * p2 + q)
             if nonzero_ratio < 0.25 :
                 return "Compression rate unreachable"
+            nonzero_ratio = min(nonzero_ratio, 1.0)
 
             self.mode['prune_conditions'].append([True, conv_layers[0], 0.0])
             self.mode['prune_conditions'].append([False, 'conv', 1-nonzero_ratio])
