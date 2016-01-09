@@ -81,6 +81,8 @@ def _stream_to_file(file_out, codebook, codes_W, net, ind_bits = 4, layers = Non
 class PQTool(BaseTool):
     required_conf = ['input_npz', 'output_file', 'mode']
 
+    TO_HIDE_PATH_ATTRS = ['output']
+
     def __init__(self, config):
         super(PQTool, self).__init__(config)
 
@@ -110,7 +112,7 @@ class PQTool(BaseTool):
 
         _stream_to_file(self.output, codebook, codes_W, net, ind_bits = 4, layers = self.layers_rank)
 
-        logger.info('Finish all layers!') 
+        logger.info('Finish all layers! Output bin file in "%s".\n', self._log_output)
                 
         return True
     

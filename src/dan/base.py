@@ -12,6 +12,9 @@ class BaseTool(object):
     # This list containis the names of required configurations of your tool
     required_conf = [] 
 
+    TO_HIDE_PATH_ATTRS = ['input_proto', 'output_proto', 'input_caffemodel',
+                          'output_caffemodel']
+
     def __init__(self, config):
         """
         Init your tool instance using a config bunch. (required!)
@@ -32,21 +35,21 @@ class BaseTool(object):
         # mainly for hide file path
         if name.startswith('_log_'):
             actual_name = name[5:]
-            if actual_name in ['input_proto', 'output_proto', 'input_caffemodel',
-                               'output_caffemodel']:
+            if actual_name in self.TO_HIDE_PATH_ATTRS:
                 if self.hide_file_path:
                     # fixme: maybe use platform-wise seperator
                     return os.path.join(*getattr(self, actual_name).rsplit('/', 2)[-2:])
                 else:
                     return getattr(self, actual_name)
-        # not all object suclass implement __getattr__
-        super_obj = super(self.__class__, self)
+        # not all object subclass implement __getattr__
+        super_obj = super(BaseTool, self)
         super_getattr = getattr(super_obj, '__getattr__', None)
         if super_getattr is not None:
             return super_getattr(name)
         else:
             raise AttributeError("type %s object has no attribute %s" % (self.__class__,
                                                                          name))
+
     @classmethod
     def populate_argument_parser(cls, parser):
         """
