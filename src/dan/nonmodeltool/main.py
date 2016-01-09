@@ -45,8 +45,9 @@ def _to_binary(array, types):
     return stream
 
 
-def _stream_to_file(file_out, codebook, codes_W, net, ind_bits = 4):
-    layers = net.params.keys()
+def _stream_to_file(file_out, codebook, codes_W, net, ind_bits = 4, layers = None):
+    if layers is None:
+        layers = net.params.keys()
     fout = open(file_out,'wb')
     nz_num = np.zeros(len(layers), np.uint32)
     spm_stream = [0] * len(layers)
@@ -83,7 +84,8 @@ class PQTool(BaseTool):
     def __init__(self, config):
         super(PQTool, self).__init__(config)
 
-        self.weights = np.load(config.input_npz)
+        self.weights = dict(np.load(config.input_npz))
+        self.layers_rank = self.weights.pop('__rank__')
         self.output = config.output_file
         self.mode = config.mode
         self.validated = False
@@ -106,7 +108,7 @@ class PQTool(BaseTool):
         _prune(net, self.mode['prune_conditions'], logger)
         codebook, codes_W = _quantize(net, self.mode['quantize_conditions'], logger)
 
-        _stream_to_file(self.output, codebook, codes_W, net)
+        _stream_to_file(self.output, codebook, codes_W, net, ind_bits = 4, layers = self.layers_rank)
 
         logger.info('Finish all layers!') 
                 
