@@ -1,36 +1,30 @@
 DAN
 ================
 
-配置文件
-----------------
+```yaml
+   pipeline:
+     - svd1
+     - prune
 
-配置文件示例 ( `config_example.yaml` ) :
-
->   pipeline:
->
->     - svd1
->
->   config:
->
->     svd1:
->
->       command: 'svd_tool'
->
->       input_proto: '../VGG16ORI_new.prototxt'
->
->       input_caffemodel: '../VGG16ORI_new.caffemodel'
->
->       output_proto: './try4.prototxt'
->
->       output_caffemodel: './try4.caffemodel'
->
->       pre-validate: True
->
->       layers:
->
->         - 'fc6, rank, 512'
->
-
+   config:
+     svd1:
+       command: 'svd_tool'
+       input_proto: '../VGG16ORI_new.prototxt'
+       input_caffemodel: '../VGG16ORI_new.caffemodel'
+       output_proto: './try4.prototxt'
+       output_caffemodel: './try4.caffemodel'
+       pre-validate: True
+       layers:
+         - 'fc6, rank, 512'
+    prune:
+      command: 'prune_tool'
+      input_proto: './try4.prototxt'
+      input_caffemodel: './try4.caffemodel'
+      output_caffemodel: './try4_after_prune.caffemodel'
+      conditions:
+        - [False, 'conv', 0.5]
+        - [True, 'fc[0-6]*', 0.75]
+```
 
 svd_tool
 ----------------
@@ -48,6 +42,21 @@ prune_tool
 Prune tool for layers of caffe network model.
 
 配置文件示例见 `src/dan/config_prune.yaml`
+
+
+quantize_tool
+----------------
+Quantize tool for layers of caffe network model.
+
+配置文件示例见 `src/dan/config_quan.yaml`
+
+nonmodel_tool
+----------------
+无模型剪枝与量化工具. 输入npz格式的文件, 不需提供prototxt/caffemodel, 每一层的系数用一个大的一维向量存储. 
+
+配置文件示例见 `src/dan/config_fool.yaml`
+
+与无模型压缩工具配套的 ``caffemodel -> npz`` 以及 ``bin -> caffemodel`` 转换工具见 [dan-tools仓库](https://github.com/angel-eye/dan-tools)
 
 
 运行示例

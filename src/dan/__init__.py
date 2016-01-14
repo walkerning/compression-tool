@@ -113,6 +113,8 @@ def main():
         worker_dict[stage] = worker
 
     for stage in whole_config['pipeline']:
+        status = worker_dict[stage].run()
+        '''
         try:
             status = worker_dict[stage].run()
         except Exception as e:
@@ -124,5 +126,6 @@ def main():
             break
         # explicitly delete
         # del worker_dict[stage] but there maybe several stage with the same name
+        '''
 
     sys.exit(0 if status else 1)

@@ -1,0 +1,12 @@
+  pipeline:
+    #- conv1
+    - nonmodel 
+
+  config:
+    nonmodel:
+      command: 'nonmodel_tool'
+      input_npz: '../VGG16.npz'
+      output_file: './VGG16.bin'
+      mode:
+        foolmode: True
+        compression_rate: 10
