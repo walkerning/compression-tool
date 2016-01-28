@@ -24,8 +24,8 @@ svd_tool=dan:svd_tool
 
 # dependencies
 # these upper/lower bound is just for the sake of my test environment
-INSTALL_REQUIRES = ['protobuf>=2.5.0, <=2.6.1',
-                    'numpy>=1.9, <=1.10.1',
+INSTALL_REQUIRES = ['protobuf>=2.5.0',
+                    'numpy>=1.9',
                     'pyyaml']
 TESTS_REQUIRE = []
 
