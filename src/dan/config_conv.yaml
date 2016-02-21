@@ -1,0 +1,14 @@
+  pipeline:
+    - conv
+
+  config:
+    conv:
+      command: 'conv_tool'
+      input_proto: '../VGG16.prototxt'
+      input_caffemodel: './VGG16.caffemodel'
+      output_proto: './VGG16_convtry.prototxt'
+      output_caffemodel: './VGG16_convtry.caffemodel'
+      mode:
+        compression_specification:
+          conv3_1: 2
+          conv3_3: 2

@@ -5,14 +5,12 @@ import logging
 import numpy
 import re
 import sys
-import os
-import yaml
 
 from google.protobuf import text_format
 
 from dan.base import BaseTool
 from dan.svdtool import defaults
-from dan.svdtool.proto_utils import modify_message
+from dan.common.proto_utils import modify_message
 from dan.common.utils import (init_logging, setup_glog_environ,
                               get_default_help)
 

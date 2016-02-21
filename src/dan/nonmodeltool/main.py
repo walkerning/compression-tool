@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import yaml
 import re
 import numpy as np
-import re
 
 from dan.base import BaseTool
 from dan.quantool import _quantize
