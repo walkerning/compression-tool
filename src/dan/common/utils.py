@@ -20,11 +20,11 @@ def setup_glog_environ(quiet=False, **envs):
     if quiet:
         os.environ['GLOG_minloglevel'] = '2'
         # else遵从环境变量设置
-    for conf_name, conf_value in envs.iteritems():
+    for conf_name, conf_value in envs.items():
         os.environ[conf_name] = conf_value
 
 def get_default_help(default, name):
     if isinstance(default, dict):
-        return name + ': ' + '; '.join(['%s for %s'%(v, k) for k, v in default.iteritems()]) + '.\n'
+        return name + ': ' + '; '.join(['%s for %s'%(v, k) for k, v in default.items()]) + '.\n'
     else:
         return name + ': ' + default + '.\n'

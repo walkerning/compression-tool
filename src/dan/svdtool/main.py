@@ -167,7 +167,7 @@ class SVDTool(BaseTool):
 
         fc_layer_names = {l.name for l in solver.layer if l.type == u'InnerProduct'}
 
-        if not set(self.svd_spec_dict) < fc_layer_names:
+        if not set(self.svd_spec_dict).issubset(fc_layer_names):
             logger.error("FC layers do not exist: < %s >. \t"
                          "Check your command line argument of '-l'. "
                          "Is that layer really a fc layer?",
@@ -269,6 +269,9 @@ class SVDTool(BaseTool):
             output_proto_file.write(text_format.MessageToString(final_solver))
 
         new_net = caffe.Net(self.output_proto, caffe.TEST)
+        # USE THIS, as caffe will insert some layer such as split
+        # the `layer_index_dict` in the above code is of no use! TODO: remove those codes
+        layer_index_dict = {name: i for i, name in enumerate(new_net._layer_names)}
 
         # 读入新的prototxt，然后对需要赋值blobs的layer都赋值，最后save
         for layer_name, param in self.ori_net.params.iteritems():
@@ -277,12 +280,11 @@ class SVDTool(BaseTool):
                 update_blob_vec(new_net.layers[layer_index_dict[layer_name]].blobs,
                                 param)
             else:
-                svd_hidelayer_name = get_svd_layer_name(layer_name)
-                update_blob_vec(new_net.layers[layer_index_dict[layer_name]].blobs,
-                                final_param_dict[layer_name])
-                update_blob_vec(new_net.layers[layer_index_dict[svd_hidelayer_name]].blobs,
-                                final_param_dict[svd_hidelayer_name])
-
+                    svd_hidelayer_name = get_svd_layer_name(layer_name)
+                    update_blob_vec(new_net.layers[layer_index_dict[layer_name]].blobs,
+                                    final_param_dict[layer_name])
+                    update_blob_vec(new_net.layers[layer_index_dict[svd_hidelayer_name]].blobs,
+                                    final_param_dict[svd_hidelayer_name])
 
         logger.info('Writing caffe model to file "%s".', self._log_output_caffemodel)
         new_net.save(self.output_caffemodel)
