@@ -204,7 +204,9 @@ class SVDTool(BaseTool):
                     layer,
                     in_place=False,
                     **{
-                        'top': [mid_layer_name]
+                        'top': [mid_layer_name],
+                        'inner_product_param.bias_term': False,
+                        'param': [layer.param[0]]
                     }
                 )
                 svd_mid_layer = modify_message(
